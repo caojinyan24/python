@@ -12,16 +12,16 @@ def divide(x, y):
 
 
 print("calculate a/b")
-while (True):
-    print("input num a")
+print("input num a")
+a = input("a=")
+while not a.isdigit():
+    print("pleas input digit")
     a = input("a=")
-    if (a.isdigit()):
-        a = int(a)
-        break
-while (True):
-    print("input num b")
+
+print("input num b")
+b = input("b=")
+while not b.isdigit():
+    print("pleas input digit")
     b = input("b=")
-    if (b.isdigit()):
-        b = int(b)
-        break
-divide(a, b)
+
+divide(int(a), int(b))
