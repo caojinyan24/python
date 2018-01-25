@@ -1,5 +1,6 @@
 # Created by .ignore support plugin (hsz.mobi)
 .idea/
 *.iml
-static/
 venv/
+/venv/
+/django/pythonMVC/.idea/
