@@ -3,5 +3,7 @@ li a {
 }
 
 body {
-    background: white url("images/01690955496f930000019ae92f3a4e.jpg@2o.jpg") no-repeat right bottom;
+    /*background: white url("images/01690955496f930000019ae92f3a4e.jpg@2o.jpg") no-repeat right bottom;*/
+    background: white no-repeat right bottom;
+
 }
