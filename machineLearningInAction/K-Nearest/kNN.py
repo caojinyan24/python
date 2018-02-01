@@ -1,5 +1,6 @@
 from numpy import *
 import operator
+import os
 import matplotlib.pyplot as plt
 
 
@@ -78,7 +79,7 @@ def print_matrix():
 
 
 def dating_class_test():
-    ho_ratio =0.1
+    ho_ratio = 0.1
     dating_data_mat, dating_labels = file2matrix('test/datingTestSet2.txt')
     norm_mat, ranges, min_vals = auto_norm(dating_data_mat)
     # shape取矩阵的维度,shape[0]获取到行数
@@ -98,7 +99,50 @@ def dating_class_test():
     print("total error rate:%f" % (error_count / float(num_test_vecs)))
 
 
+# 把32*32的矩阵转换为1*1024的矩阵(拉伸)(只取了前32行的前32列)
+def img2vector(filename):
+    # 1*1024的一个矩阵数组
+    return_vect = zeros((1, 1024))
+    fr = open(filename)
+    for i in range(32):
+        line_str = fr.readline()
+        for j in range(32):
+            return_vect[0, 32 * i + j] = int(line_str[j])
+    # print(return_vect[0, 0:31])
+    return return_vect
+
+
+def hand_writing_class_test():
+    hw_labels = []
+    training_file_list = os.listdir('test/trainingDigits')
+    m = len(training_file_list)
+    training_mat = zeros((m, 1024))
+    for i in range(m):
+        file_name_str = training_file_list[i]
+        file_str = file_name_str.split('.')[0]
+        class_num_str = int(file_str.split('_')[0])
+        hw_labels.append(class_num_str)
+        training_mat[i, :] = img2vector('test/trainingDigits/%s' % file_name_str)
+    # print("training_mat:", training_mat)
+    test_file_list = os.listdir('test/testDigits')
+    error_count = 0.0
+    m_test = len(test_file_list)
+    for i in range(m_test):
+        file_name_str = test_file_list[i]
+        file_str = file_name_str.split('.')[0]
+        class_num_str = int(file_str.split('_')[0])
+        vector_under_test = img2vector('test/testDigits/%s' % file_name_str)
+        classifier_result = classify0(vector_under_test, training_mat, hw_labels, 3)
+        if (classifier_result != class_num_str):
+            error_count += 1
+            print("classifier came back with:,the real answer is:", classifier_result, class_num_str, file_name_str)
+    print("the total number of errors:", error_count)
+    print("the total error rate:", error_count / float(m_test))
+
+
 # group, labels = create_data_set()
 # print(classify0([1, 1], group, labels, 3))
 # print_matrix()
-dating_class_test()
+# dating_class_test()
+# img2vector('test/testDigits/0_13.txt')
+hand_writing_class_test()
