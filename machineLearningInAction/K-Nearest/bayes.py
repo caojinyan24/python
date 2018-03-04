@@ -1,7 +1,7 @@
-from numpy import zeros
-from numpy import array
+from array import array
+from math import log
 from numpy import ones
-from numpy import log
+from numpy import random
 
 
 def load_data_set():
@@ -57,7 +57,7 @@ def train_nb_0(train_matrix, train_category):
             p0_denom += sum(train_matrix[i])
     print(p0_num)
     print(p1_num)
-    p1_vect = log(p1_num / p1_denom)
+    p1_vect = log(p1_num / p1_denom)  # 对概率值取对数
     p0_vect = log(p0_num / p0_denom)
     print(p0_vect)
     print(p1_vect)
@@ -65,7 +65,8 @@ def train_nb_0(train_matrix, train_category):
     return p0_vect, p1_vect, p_abusive
 
 
-# ???
+# p0_vec对应各个单词属于类别0的概率；vec2_classify对应测试样本转换为数字后的数组
+# p0和p1分别对应各个单词位于类别0和1的概率之和
 def classify_nb(vec2_classify, p0_vec, p1_vec, p_class1):
     print('classify_nb:', vec2_classify)
     print('classify_nb:', p0_vec)
@@ -94,4 +95,29 @@ def testing_nb():
     print(test_entry, 'classified as:', classify_nb(this_doc, p0_v, p1_v, p_ab))
 
 
-testing_nb()
+# testing_nb()
+def text_parse(big_string):
+    import re
+    list_of_tokens = re.split(r'\W*', big_string)
+    return [tok.lower() for tok in list_of_tokens if len(tok) > 2]
+
+
+def spam_test():
+    doc_list = []
+    class_list = []
+    full_text = []
+    for i in range(1, 26):
+        word_list = text_parse(open('email/span/%d.txt' % i).read())
+        doc_list.append(word_list)
+        full_text.extend(word_list)
+        class_list.append(1)
+        word_list = text_parse(open('email/ham/%d.txt' % i).read())
+        doc_list.append(word_list)
+        class_list.append(0)
+        full_text.extend(word_list)
+    vocab_list=create_vocab_list(doc_list)
+    training_set=range(50)
+    test_set=[]
+    for i in range(10):
+        rand_index=int(random.uniform(0,len(training_set)))
+
