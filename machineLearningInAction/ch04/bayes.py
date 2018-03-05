@@ -1,5 +1,5 @@
-from array import array
-from math import log
+from numpy import array
+from numpy import log
 from numpy import ones
 from numpy import random
 
@@ -38,11 +38,8 @@ def set_of_words2_vec(vocab_list, input_set):
 
 
 def train_nb_0(train_matrix, train_category):
-    print(train_matrix)
     num_train_docs = len(train_matrix)
     num_words = len(train_matrix[0])
-    print(sum(train_category))
-    print(float(num_train_docs))
     p_abusive = sum(train_category) / float(num_train_docs)  # 代表划分为类别1的样本占总样本的比例（0.5）
     p0_num = ones(num_words)
     p1_num = ones(num_words)
@@ -55,13 +52,10 @@ def train_nb_0(train_matrix, train_category):
         else:
             p0_num += train_matrix[i]
             p0_denom += sum(train_matrix[i])
-    print(p0_num)
-    print(p1_num)
+    print('p0_num:', p0_num)
+    print('p1_num:', p1_num)
     p1_vect = log(p1_num / p1_denom)  # 对概率值取对数
     p0_vect = log(p0_num / p0_denom)
-    print(p0_vect)
-    print(p1_vect)
-    print(p_abusive)
     return p0_vect, p1_vect, p_abusive
 
 
@@ -102,12 +96,13 @@ def text_parse(big_string):
     return [tok.lower() for tok in list_of_tokens if len(tok) > 2]
 
 
+# spam下的是垃圾邮件，而ham下为正常邮件。随机选取10个邮件作为训练数据，剩余的邮件作为测试数据。对于选取的10个训练数据，通过beyes分类计算每个单词的概率之后，对测试数据做分类。
 def spam_test():
     doc_list = []
     class_list = []
     full_text = []
     for i in range(1, 26):
-        word_list = text_parse(open('email/span/%d.txt' % i).read())
+        word_list = text_parse(open('email/spam/%d.txt' % i).read())
         doc_list.append(word_list)
         full_text.extend(word_list)
         class_list.append(1)
@@ -115,9 +110,25 @@ def spam_test():
         doc_list.append(word_list)
         class_list.append(0)
         full_text.extend(word_list)
-    vocab_list=create_vocab_list(doc_list)
-    training_set=range(50)
-    test_set=[]
+    vocab_list = create_vocab_list(doc_list)
+    training_set = list(range(50))
+    test_set = []
     for i in range(10):
-        rand_index=int(random.uniform(0,len(training_set)))
+        rand_index = int(random.uniform(0, len(training_set)))
+        test_set.append(training_set[rand_index])
+        del (training_set[rand_index])
+    train_mat = []
+    train_classes = []
+    for doc_index in training_set:
+        train_mat.append(set_of_words2_vec(vocab_list, doc_list[doc_index]))
+        train_classes.append(class_list[doc_index])
+    p0_v, p1_v, p_span = train_nb_0(train_mat, array(train_classes))
+    error_count = 0
+    for doc_index in test_set:
+        word_vector = set_of_words2_vec(vocab_list, doc_list[doc_index])
+        if classify_nb(array(word_vector), p0_v, p1_v, p_span) != class_list[doc_index]:
+            error_count += 1
+    print('the error rate is:', float(error_count) / len(test_set))
 
+
+spam_test()
