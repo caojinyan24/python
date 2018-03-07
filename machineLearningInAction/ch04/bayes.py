@@ -1,3 +1,4 @@
+import feedparser
 from numpy import array
 from numpy import log
 from numpy import ones
@@ -21,7 +22,6 @@ def create_vocab_list(data_set):
         # 取两个集合的并集
         vocab_set = vocab_set | set(document)
     return list(vocab_set)
-    # return ['quit', 'buying', 'mr', 'licks', 'mr']
 
 
 # vocab_list是一个要测试的文件，input_set则是其中一个训练好的标准数组。这个方法用来将文本转换为数字，转换标准为：input_set中有的单词，
@@ -52,8 +52,8 @@ def train_nb_0(train_matrix, train_category):
         else:
             p0_num += train_matrix[i]
             p0_denom += sum(train_matrix[i])
-    print('p0_num:', p0_num)
-    print('p1_num:', p1_num)
+    # print('p0_num:', p0_num)
+    # print('p1_num:', p1_num)
     p1_vect = log(p1_num / p1_denom)  # 对概率值取对数
     p0_vect = log(p0_num / p0_denom)
     return p0_vect, p1_vect, p_abusive
@@ -62,9 +62,9 @@ def train_nb_0(train_matrix, train_category):
 # p0_vec对应各个单词属于类别0的概率；vec2_classify对应测试样本转换为数字后的数组
 # p0和p1分别对应各个单词位于类别0和1的概率之和
 def classify_nb(vec2_classify, p0_vec, p1_vec, p_class1):
-    print('classify_nb:', vec2_classify)
-    print('classify_nb:', p0_vec)
-    print('classify_nb:', p1_vec)
+    # print('classify_nb:', vec2_classify)
+    # print('classify_nb:', p0_vec)
+    # print('classify_nb:', p1_vec)
     p1 = sum(vec2_classify * p1_vec) + log(p_class1)
     p0 = sum(vec2_classify * p0_vec) + log(1.0 - p_class1)
     if p1 > p0:
@@ -131,4 +131,63 @@ def spam_test():
     print('the error rate is:', float(error_count) / len(test_set))
 
 
-spam_test()
+def calc_most_freq(vocab_list, full_text):
+    import operator
+    freq_dict = {}
+    for token in vocab_list:
+        freq_dict[token] = full_text.count(token)
+    sorted_freq = sorted(freq_dict.items(), key=operator.itemgetter(1), reverse=True)
+    return sorted_freq[:30]
+
+
+def bag_of_words2_vec_mn(vocab_list, input_set):
+    return_vec = [0] * len(vocab_list)
+    for word in input_set:
+        if word in vocab_list:
+            return_vec[vocab_list.index(word)] += 1
+    return return_vec
+
+
+def local_words(feed1, feed0):
+    doc_list = []
+    class_list = []
+    full_text = []
+    min_len = min(len(feed1['entries']), len(feed0['entries']))
+    for i in range(min_len):
+        word_list = text_parse(feed1['entries'][i]['summary'])
+        doc_list.append(word_list)
+        full_text.extend(word_list)
+        class_list.append(1)
+        word_list = text_parse(feed0['entries'][i]['summary'])
+        doc_list.append(word_list)
+        full_text.extend(word_list)
+        class_list.append(0)
+    vocab_list = create_vocab_list(doc_list)
+    top30_words = calc_most_freq(vocab_list, full_text)
+    for pair_w in top30_words:
+        if pair_w[0] in vocab_list:
+            vocab_list.remove(pair_w[0])
+    training_set = list(range(2 * min_len))
+    test_set = []
+    for i in range(20):
+        rand_index = int(random.uniform(0, len(training_set)))
+        test_set.append(training_set[rand_index])
+        del (training_set[rand_index])
+    train_mat = []
+    train_classes = []
+    for doc_index in training_set:
+        train_mat.append(bag_of_words2_vec_mn(vocab_list, doc_list[doc_index]))
+        train_classes.append(class_list[doc_index])
+    p0_v, p1_v, p_spam = train_nb_0(array(train_mat), array(train_classes))
+    error_count = 0
+    for doc_index in test_set:
+        word_vector = bag_of_words2_vec_mn(vocab_list, doc_list[doc_index])
+        if classify_nb(array(word_vector), p0_v, p1_v, p_spam) != class_list[doc_index]:
+            error_count += 1
+    print('the error rate is:', float(error_count) / len(test_set))
+    return vocab_list, p0_v, p1_v
+
+
+ny = feedparser.parse('http://newyork.craigslist.org/stp/index.rss')
+sf = feedparser.parse('http://sfbay.craigslist.org/stp/index.rss')
+vocab_list, p_sf, p_nf = local_words(ny, sf)
